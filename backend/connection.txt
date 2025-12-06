@@ -1,0 +1,11 @@
+Connection à ma base de données
+
+cd "C:\See_Allergy\backend"
+py app.py
+
+Autre fenêtre
+cd "C:\See_Allergy\frontend"
+py -m http.server 5500
+
+En local
+http://127.0.0.1:5500/index.html

@@ -1,0 +1,18 @@
+# --- Protect secrets ---
+.env
+backend/.env
+data/.env
+
+# --- Python ---
+__pycache__/
+*.pyc
+
+# --- Environnements virtuels ---
+.venv/
+venv/
+
+# --- CSV volumineux ---
+*.csv
+
+# --- VS Code ---
+.vscode/
