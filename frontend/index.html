@@ -513,12 +513,7 @@
 
   <script>
   // ====== CONFIG / ETAT GLOBAL ======
-const API_BASE =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1"
-    ? "http://127.0.0.1:5000"   
-    : "";                       
-
+const API_BASE = "";
   let TOTAL_PRODUCTS = 0;        // total matching documents in Mongo
   let PRODUCTS = [];             // produits de la page courante
   let GLOBAL_INDEXES = null;     // payload /api/stats/indexes
@@ -796,7 +791,6 @@ const API_BASE =
   });
 
   // ====== KPIs ======
-  const API_BASE = window.location.origin;
   function renderKPIs(){
     if (!GLOBAL_INDEXES) return;
 
