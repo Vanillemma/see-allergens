@@ -513,7 +513,9 @@
 
   <script>
   // ====== CONFIG / ETAT GLOBAL ======
-  const API_BASE = "http://127.0.0.1:5000";
+const API_BASE_URL = "";
+// et les appels restent de ce style :
+fetch(`${API_BASE_URL}/api/products?...`)
 
   let TOTAL_PRODUCTS = 0;        // total matching documents in Mongo
   let PRODUCTS = [];             // produits de la page courante
