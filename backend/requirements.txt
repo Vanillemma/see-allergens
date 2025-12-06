@@ -4,6 +4,3 @@ python-dotenv==1.0.1
 flask-cors==4.0.0
 gunicorn==22.0.0
 
-
-mongodb+srv://Emma:Sunnybrook@cluster0.wgdeohs.mongodb.net/
-mongodb+srv://Emma:Sunnybrook@cluster0.wgdeohs.mongodb.net/monprojet
