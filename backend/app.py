@@ -647,7 +647,7 @@ def stats_analytics():
 
 
 # === FRONTEND STATIC  ===
-FRONTEND_DIR = pathlib.Path(__file__).parent.parent / "frontend"
+FRONTEND_DIR = pathlib.Path(__file__).parent
 
 @app.route("/")
 def serve_root():
@@ -656,6 +656,7 @@ def serve_root():
 @app.route("/<path:path>")
 def serve_static(path):
     return send_from_directory(FRONTEND_DIR, path)
+
 
 if __name__ == "__main__":
     debug_flag = bool(int(os.getenv("FLASK_DEBUG", "1")))

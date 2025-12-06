@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SEE ALLERGENS · Supplier filter (EN only)</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tiny libs (CDN only; can be removed if not needed) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+
+  <style>
+    :root{
+      --brand:#175D8D;           /* primary */
+      --brand-2:#0EA5A5;         /* secondary */
+      --brand-3:#EAF6FF;         /* soft background */
+      --accent:#FFB020;          /* warm accent */
+      --text:#0F172A;            /* near-black */
+      --muted:#64748B;           /* slate */
+      --bg:#FFFFFF;              /* page bg */
+      --surface:#FFFFFF;         /* cards */
+      --shadow:0 10px 30px rgba(16,24,40,.12);
+      --radius:18px; --radius-sm:12px; --radius-lg:28px;
+      --container:1220px;
+      .nav-search input::placeholder {
+  color: #ffffff;
+  opacity: 1; /* full white,  */
+}
+
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    .container{max-width:var(--container);margin:0 auto;padding:0 24px}
+
+    /* Header */
+    header.site-header{position:sticky;top:0;z-index:60;background:linear-gradient(90deg,var(--brand) 0%, #0B7BAA 100%);color:#fff;box-shadow:0 2px 14px rgba(0,0,0,.12)}
+    .nav{display:flex;align-items:center;gap:20px;padding:14px 0}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:.3px}
+    .brand-logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#fff;color:var(--brand);font-weight:900}
+    .nav-search{flex:1;display:flex;gap:10px;align-items:center}
+    .nav-search input{flex:1;border:none;background:rgba(255,255,255,.15);color:#fff;padding:10px 14px;border-radius:12px;outline:none}
+    .nav-links{display:flex;gap:6px;flex-wrap:wrap}
+    .nav-links a{padding:8px 10px;border-radius:999px;opacity:.95}
+    .nav-links a:hover{background:rgba(255,255,255,.12)}
+    .nav-links a.active{background:#fff;color:var(--brand);font-weight:700}
+
+    /* Hero */
+    .hero{background:linear-gradient(180deg,var(--brand) 0%, #0D5F88 100%);color:#fff}
+    .hero-inner{max-width:var(--container);margin:0 auto;padding:46px 24px 34px;display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:center}
+    .hero h1{margin:0 0 8px;font-size:2rem}
+    .hero p{margin:0 0 16px;opacity:.95}
+    .btn{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:0;cursor:pointer;font-weight:700}
+    .btn-primary{background:#fff;color:var(--brand)}
+    .btn-ghost{background:rgba(255,255,255,.15);color:#fff}
+    .kpi-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+    .kpi{background:#fff;color:var(--text);border-radius:16px;padding:16px;box-shadow:var(--shadow)}
+    .kpi .label{color:var(--muted);font-size:.9rem}
+    .kpi .value{font-weight:800;font-size:1.5rem;margin-top:6px}
+
+    /* Sections */
+    section{padding:46px 0}
+    .section-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+    h2{margin:0;font-size:1.5rem}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--brand-3);color:var(--brand);font-weight:700;font-size:.85rem}
+
+    /* Sidebar layout */
+    .with-sidebar{display:grid;grid-template-columns:300px 1fr;gap:20px}
+    .sidebar{background:var(--surface);border-radius:16px;padding:16px;box-shadow:var(--shadow);position:sticky;top:86px;height:max-content}
+
+    /* Controls */
+    .control{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+    .control label{font-weight:600;font-size:.95rem}
+    .input,.select{border:1px solid #E5E7EB;border-radius:12px;padding:10px 12px;background:#fff;width:100%}
+    .chips{display:flex;flex-wrap:wrap;gap:8px}
+    .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#EEF2F6;color:#0B1220;font-size:.85rem;cursor:pointer}
+    .chip.is-danger{background:#FEE2E2;color:#991B1B}
+    .chip.is-safe{background:#DCFCE7;color:#14532D}
+    .chip.is-warn{background:#FFF4E5;color:#8A5800}
+    .muted{color:var(--muted)}
+    .chip.is-active{
+    background:#0F172A;
+    color:#fff;
+    border:2px solid #0F172A;
+}
+
+    /* Cards & table */
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .card{background:var(--surface);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+    table{width:100%;border-collapse:separate;border-spacing:0 10px}
+    th,td{text-align:left;padding:12px 14px}
+    thead th{color:var(--muted);font-weight:700;cursor:pointer}
+    tbody tr{background:var(--surface);box-shadow:var(--shadow)}
+    tbody tr td:first-child{border-top-left-radius:12px;border-bottom-left-radius:12px}
+    tbody tr td:last-child{border-top-right-radius:12px;border-bottom-right-radius:12px}
+    .pagination{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:10px}
+
+    /* Charts */
+    canvas{max-width:100%}
+
+    /* Indexes */
+    .index-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+    .index-item{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:12px}
+    .index-item header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .pill{display:inline-flex;align-items:center;padding:6px 10px;border-radius:999px;background:var(--brand-3);color:var(--brand);font-weight:700;font-size:.8rem}
+
+    /* Dropzone (optional UI, guarded in JS) */
+    .dropzone{border:2px dashed #C7D2D9;border-radius:16px;padding:18px;display:grid;place-items:center;text-align:center;color:#334155}
+    .dropzone input{display:none}
+
+    /* Modal / Panel */
+    .modal{position:fixed;inset:0;background:rgba(2,6,23,.6);display:none;align-items:center;justify-content:center;padding:20px;z-index:80}
+    .modal-content{background:#fff;border-radius:18px;box-shadow:var(--shadow);max-width:860px;width:100%;padding:18px}
+
+    /* Slide-over panel for swaps */
+    .panel{position:fixed;top:0;right:0;height:100%;width:420px;max-width:100%;background:#fff;box-shadow:var(--shadow);transform:translateX(100%);transition:transform .24s ease;z-index:90;display:flex;flex-direction:column}
+    .panel.open{transform:translateX(0)}
+    .panel header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #e5e7eb}
+    .panel .panel-body{padding:14px 16px;overflow:auto}
+
+    /* Footer */
+    footer{padding:30px 0;background:#F8FAFC;color:#64748B}
+
+    /* Responsive */
+    @media (max-width:1100px){
+      .grid{grid-template-columns:1fr 1fr}
+      .kpi-bar{grid-template-columns:1fr 1fr}
+      .with-sidebar{grid-template-columns:1fr}
+      .sidebar{position:relative;top:auto}
+      .hero-inner{grid-template-columns:1fr}
+      .index-grid{grid-template-columns:1fr 1fr}
+    }
+    @media (max-width:640px){
+      .grid{grid-template-columns:1fr}
+      .kpi-bar{grid-template-columns:1fr}
+      .index-grid{grid-template-columns:1fr}
+    }
+
+/* === INDEXES === */
+
+/* grille des colonnes (Allergen / Main ingredient / …) */
+#indexes .grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap:16px;
+}
+
+/* liste à l'intérieur de chaque carte */
+#indexes .index-grid{
+  max-height:340px;           /* hauteur max du bloc */
+  overflow-y:auto;            /* scroll interne quand c'est long */
+  padding-right:4px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+/* une ligne d’index = look "pill" compact */
+#indexes .index-item{
+  background:#ffffff;
+  border-radius:999px;
+  padding:6px 10px;
+  border:1px solid rgba(148,163,184,0.45);
+  box-shadow:0 4px 10px rgba(15,23,42,0.06);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+#indexes .index-item header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:0;
+}
+
+#indexes .index-item strong{
+  font-size:0.85rem;
+  font-weight:500;
+}
+
+/* pastille de compteur */
+#indexes .index-item .pill{
+  background:rgba(14,165,165,0.12);
+  color:var(--brand);
+  font-weight:600;
+  padding:3px 7px;
+  border-radius:999px;
+  font-size:0.72rem;
+}
+
+/* bouton "Filter / View" plus petit */
+#indexes .index-item .chip{
+  font-size:0.75rem;
+  padding:4px 10px;
+  border-radius:999px;
+  background:#ffffff;
+  border:1px solid rgba(15,23,42,0.12);
+  color:var(--brand);
+}
+
+/* hover léger */
+#indexes .index-item:hover{
+  transform:translateY(-1px);
+  box-shadow:0 10px 18px rgba(15,23,42,0.18);
+  border-color:rgba(37,99,235,0.35);
+}
+
+#indexes .index-item .chip:hover{
+  background:var(--brand);
+  color:#fff;
+  border-color:var(--brand);
+}
+
+
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="#home" onclick="setActive('home')">
+        <div class="brand-logo">SA</div>
+        <span>SEE ALLERGENS</span>
+      </a>
+      <div class="nav-search">
+        <input id="globalSearch" type="search" placeholder="Search products… (Ctrl/⌘+K)">
+      </div>
+      <nav class="nav-links">
+        <a href="#catalogue" class="active" data-link="catalogue">Catalog</a>
+        <a href="#indexes" data-link="indexes">Indexes</a>
+        <a href="#analytique" data-link="analytique">Analytics</a>
+        <a href="#cart" data-link="cart">Cart Comparator</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero" id="home">
+    <div class="hero-inner">
+      <div>
+        <h1>Your safe food choice assistant</h1>
+        <p>Filter safe products, explore taste‑preserving alternatives, and visualize allergen presence across your catalog.</p>
+        <div class="hero-cta">
+          <a href="#catalogue" class="btn btn-primary">Browse catalog</a>
+          <a href="#analytique" class="btn btn-ghost">See analytics</a>
+        </div>
+      </div>
+      <div class="kpi-bar" role="group" aria-label="KPIs">
+        <div class="kpi"><div class="label">Indexed products</div><div class="value" id="kpiProducts">—</div></div>
+        <div class="kpi"><div class="label">Tracked allergens</div><div class="value" id="kpiAllergens">—</div></div>
+        <div class="kpi"><div class="label">Safe rate (current)</div><div class="value" id="kpiSafe">—</div></div>
+        <div class="kpi"><div class="label">Most common co‑occurrence</div><div class="value" id="kpiCoOccur">—</div></div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Catalogue -->
+  <section id="catalogue">
+    <div class="container">
+      <div class="section-header">
+        <h2>Product Catalog</h2>
+        <span class="badge">Multi‑allergen filter · sort · pagination</span>
+      </div>
+
+      <div class="with-sidebar">
+        <!-- Sidebar filters -->
+        <aside class="sidebar">
+          <div class="control">
+            <label for="search">Search</label>
+            <input id="search" class="input" type="search" placeholder="Name, ingredient, seasoning…">
+          </div>
+          <div class="control">
+            <label>Avoid these allergens</label>
+            <div class="chips" id="avoidChips"></div>
+          </div>
+          <div class="control">
+            <label for="supplierSelect">Supplier</label>
+            <select id="supplierSelect" class="select"></select>
+          </div>
+          <div class="control">
+            <label for="suffixSelect">Profile</label>
+            <select id="suffixSelect" class="select"></select>
+          </div>
+          <div class="control">
+            <label for="mainIngredient">Main ingredient</label>
+            <select id="mainIngredient" class="select"></select>
+          </div>
+          <div class="control">
+            <label for="sweetener">Sweetener</label>
+            <select id="sweetener" class="select"></select>
+          </div>
+          <div class="control">
+            <label for="fatOil">Fat/Oil</label>
+            <select id="fatOil" class="select"></select>
+          </div>
+          <div class="control">
+            <label for="seasoning">Seasoning</label>
+            <select id="seasoning" class="select"></select>
+          </div>
+          <div class="control">
+            <label for="pageSize">Results per page</label>
+            <select id="pageSize" class="select">
+              <option>12</option><option>24</option><option>48</option>
+            </select>
+          </div>
+          <div class="control" style="display:flex;gap:8px">
+            <button id="applyFilters" class="btn btn-primary" style="flex:1">Apply</button>
+            <button id="clearFilters" class="btn" style="flex:1">Reset</button>
+          </div>
+          <small class="muted">Tip: press Ctrl/⌘ + K for global search.</small>
+        </aside>
+
+        <!-- Results -->
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
+            <div class="muted" id="resultCount">—</div>
+            <div>
+              <label class="muted" for="sortBy">Sort by </label>
+              <select id="sortBy" class="select">
+                <option value="name">Name (A→Z)</option>
+                <option value="ingredient">Main ingredient (A→Z)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid" id="cardGrid"></div>
+          <div class="pagination" id="pagination"></div>
+
+          <details style="margin-top:18px">
+            <summary><strong>Table view (detailed)</strong></summary>
+            <table aria-label="Products table" style="margin-top:12px">
+              <thead>
+                <tr>
+                  <th data-col="Food Product">Product</th>
+                  <th data-col="Supplier">Supplier</th>
+                  <th data-col="Main Ingredient">Main Ingredient</th>
+                  <th data-col="Sweetener">Sweetener</th>
+                  <th data-col="Fat/Oil">Fat/Oil</th>
+                  <th data-col="Seasoning">Seasoning</th>
+                  <th>Allergens</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Indexes hub -->
+  <section id="indexes" style="background:var(--brand-3)">
+    <div class="container">
+      <div class="section-header">
+        <h2>Indexes</h2>
+        <span class="badge">Allergen · Ingredient · Sweetener · Fat/Oil · Seasoning · Free‑from</span>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <h3 style="margin:0 0 10px">Index by allergen</h3>
+          <div class="index-grid" id="allergenIndex"></div>
+        </article>
+        <article class="card">
+          <h3 style="margin:0 0 10px">Index by main ingredient</h3>
+          <div class="index-grid" id="ingredientIndex"></div>
+        </article>
+        <article class="card">
+          <h3 style="margin:0 0 10px">Index by sweetener</h3>
+          <div class="index-grid" id="sweetenerIndex"></div>
+        </article>
+        <article class="card">
+          <h3 style="margin:0 0 10px">Index by fat/oil</h3>
+          <div class="index-grid" id="fatIndex"></div>
+        </article>
+        <article class="card">
+          <h3 style="margin:0 0 10px">Index by seasoning</h3>
+          <div class="index-grid" id="seasonIndex"></div>
+        </article>
+        <article class="card">
+          <h3 style="margin:0 0 10px">Free‑from index</h3>
+          <div class="index-grid" id="freeFromIndex"></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+    <!-- Analytics -->
+  <section id="analytique" style="background:var(--brand-3)">
+    <div class="container">
+      <div class="section-header">
+        <h2>Analytics</h2>
+        <span class="badge">Top 9 · Co-occurrences · Distribution · Safe/Contains</span>
+      </div>
+      <div class="grid">
+        <article class="card">
+          <h3 style="margin:0 0 10px">Top 9 allergens</h3>
+          <canvas id="topAllergensChart" height="300" aria-label="Top allergens chart" role="img"></canvas>
+        </article>
+        <article class="card">
+          <h3 style="margin:0 0 10px">Co-occurrences (matrix)</h3>
+          <canvas id="coocMatrix" height="300" aria-label="Co-occurrence matrix" role="img"></canvas>
+        </article>
+        <article class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <h3 style="margin:0">Distribution by main ingredient</h3>
+            <select class="select" id="ingredientFamilySelect"></select>
+          </div>
+          <canvas id="ingredientSplit" height="300" aria-label="Ingredient distribution" role="img"></canvas>
+        </article>
+        <article class="card">
+          <h3 style="margin:0 0 10px">Safe vs contains</h3>
+          <canvas id="safeDonut" height="300" aria-label="Safe donut" role="img"></canvas>
+        </article>
+        <article class="card">
+          <h3 style="margin:0 0 10px">Top main ingredients</h3>
+          <canvas id="topMains" height="300"></canvas>
+        </article>
+        <article class="card">
+          <h3 style="margin:0 0 10px">Top sweeteners & oils</h3>
+          <canvas id="topSweetOil" height="300"></canvas>
+        </article>
+        <article class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <h3 style="margin:0">Allergen co-occurrence network</h3>
+            <small class="muted">Click a node (e.g. Milk)</small>
+          </div>
+          <div id="coocNetwork" style="height:420px;position:relative">
+            <svg id="coocSvg" viewBox="0 0 800 420" preserveAspectRatio="xMidYMid meet" aria-label="Co-occurrence network"></svg>
+          </div>
+          <div id="coocList" class="chips" aria-live="polite" style="margin-top:10px"></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Cart Comparator -->
+  <section id="cart">
+    <div class="container">
+      <div class="section-header">
+        <h2>Cart Comparator</h2>
+        <span class="badge">Aggregated allergens</span>
+      </div>
+      <div class="with-sidebar">
+        <aside class="sidebar">
+          <div class="control">
+            <label>Add product</label>
+            <input id="cartSearch" class="input" list="productList" placeholder="Type a product name…">
+            <datalist id="productList"></datalist>
+          </div>
+          <div class="control" style="display:flex;gap:8px">
+            <button id="btnAddToCart" class="btn btn-primary">Add</button>
+            <button id="btnClearCart" class="btn">Clear</button>
+          </div>
+          <div class="control">
+            <label>Allergy profile (avoid)</label>
+            <div class="chips" id="cartAvoid"></div>
+          </div>
+        </aside>
+        <div>
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Allergens</th>
+                <th>Verdict</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cartBody"></tbody>
+          </table>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap" id="cartAgg"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Product modal (details + taste‑preserving alternatives) -->
+  <div class="modal" id="productModal" aria-hidden="true">
+    <div class="modal-content">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">
+        <h3 id="pmTitle" style="margin:0">Product</h3>
+        <button class="chip" onclick="closeModal()">✕</button>
+      </div>
+      <div id="pmBody"></div>
+    </div>
+  </div>
+
+  <!-- Slide-over panel for Alternative Swap Suggestion -->
+  <aside id="swapPanel" class="panel" aria-hidden="true">
+    <header>
+      <strong id="swapTitle">Instant safe replacements</strong>
+      <button class="chip" onclick="closeSwapPanel()">✕</button>
+    </header>
+    <div class="panel-body" id="swapBody"></div>
+  </aside>
+
+  <footer>
+    <div class="container" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <small>Academic project – SEE ALLERGENS</small>
+      <small><a href="#home">Back to top</a></small>
+    </div>
+  </footer>
+
+  <script>
+  // ====== CONFIG / ETAT GLOBAL ======
+const API_BASE = "";
+  let TOTAL_PRODUCTS = 0;        // total matching documents in Mongo
+  let PRODUCTS = [];             // produits de la page courante
+  let GLOBAL_INDEXES = null;     // payload /api/stats/indexes
+  let GLOBAL_ANALYTICS = null;   // payload /api/stats/analytics
+
+  const state = {
+    search: "",
+    avoid: new Set(),
+    include: new Set(),
+    supplier: "",
+    suffix: "",
+    main: "",
+    sweet: "",
+    fat: "",
+    season: "",
+    page: 1,
+    pageSize: 12,
+    sort: "name",
+    cart: []        // tableau d’objets produits
+  };
+
+  // ====== Helpers DOM ======
+  const avoidChips     = document.getElementById("avoidChips");
+  const supplierSelect = document.getElementById("supplierSelect");
+  const suffixSelect   = document.getElementById("suffixSelect");
+  const mainSelect     = document.getElementById("mainIngredient");
+  const sweetSelect    = document.getElementById("sweetener");
+  const fatSelect      = document.getElementById("fatOil");
+  const seasonSelect   = document.getElementById("seasoning");
+  const pageSizeSel    = document.getElementById("pageSize");
+  const sortBy         = document.getElementById("sortBy");
+  const cardGrid       = document.getElementById("cardGrid");
+  const tableBody      = document.getElementById("tableBody");
+  const pagination     = document.getElementById("pagination");
+  const resultCount    = document.getElementById("resultCount");
+
+  const cartBody   = document.getElementById("cartBody");
+  const cartAgg    = document.getElementById("cartAgg");
+  const cartSearch = document.getElementById("cartSearch");
+  const cartAvoid  = document.getElementById("cartAvoid");
+  const productList = document.getElementById("productList");
+
+  const ingredientFamilySelect = document.getElementById("ingredientFamilySelect");
+
+  // Charts
+  let chartTop = null, chartCooc = null, chartSplit = null, chartDonut=null,
+      chartMains=null, chartSweetOil=null;
+
+  // ====== Normalisation produit côté front ======
+  function normalizeRow(r){
+    return {
+      id:      r["id"] || "",
+      product: r["Food Product"]    // clé envoyée par l’API
+          || r["Food_product"]    // au cas où tu testes autre chose
+          || r["product"]
+          || r["Product"]
+          || "",
+      supplier:r["Supplier"]        || r["Retailer"] || r["Vendor"] || "",
+      main:    r["Main Ingredient"] || r["Main_ingredient"] || "",
+      sweet:   r["Sweetener"]       || "",
+      fat:     r["Fat/Oil"]         || "",
+      season:  r["Seasoning"]       || "",
+      suffix:  r["Suffix"]          || "",
+      allergens: (r["Allergens"] || "None").trim()
+    };
+  }
+
+  function globalAllergenLabels(){
+    if (GLOBAL_INDEXES && Array.isArray(GLOBAL_INDEXES.allergens)){
+      return GLOBAL_INDEXES.allergens
+        .map(a => a.label)
+        .filter(Boolean)
+        .sort((a,b)=> a.localeCompare(b));
+    }
+    return [];
+  }
+
+  function getIndexLabels(key){
+    if (!GLOBAL_INDEXES || !Array.isArray(GLOBAL_INDEXES[key])) return [];
+    return GLOBAL_INDEXES[key]
+      .map(x => x.label)
+      .filter(l => l && l !== "—");
+  }
+
+  function cartLabel(p){
+    const parts = [p.product];
+    if (p.supplier) parts.push(p.supplier);
+    if (p.suffix)   parts.push(p.suffix);
+    return parts.join(" — ");
+  }
+
+  // ====== RENDU FILTRES ======
+  function renderFilters(){
+    if (!GLOBAL_INDEXES) return;
+
+    // Allergen chips (avoid)
+    avoidChips.innerHTML = "";
+    globalAllergenLabels().forEach(a => {
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.textContent = a;
+      if (state.avoid.has(a)) b.classList.add("is-danger");
+
+      b.onclick = () => {
+        if (state.avoid.has(a)) state.avoid.delete(a);
+        else state.avoid.add(a);
+        state.page = 1;
+        fetchPageFromApi();
+        renderFilters();   // pour refléter l’état visuel
+      };
+      avoidChips.appendChild(b);
+    });
+
+    // Selects
+    const setSelect = (sel, labels) => {
+      sel.innerHTML = '<option value="">—</option>' +
+        labels.map(v => `<option value="${v}">${v}</option>`).join("");
+    };
+
+    setSelect(supplierSelect, getIndexLabels("suppliers"));
+    setSelect(suffixSelect,   getIndexLabels("suffixes"));
+    setSelect(mainSelect,     getIndexLabels("main"));
+    setSelect(sweetSelect,    getIndexLabels("sweet"));
+    setSelect(fatSelect,      getIndexLabels("fat"));
+    setSelect(seasonSelect,   getIndexLabels("season"));
+
+    supplierSelect.value = state.supplier;
+    suffixSelect.value   = state.suffix;
+    mainSelect.value     = state.main;
+    sweetSelect.value    = state.sweet;
+    fatSelect.value      = state.fat;
+    seasonSelect.value   = state.season;
+    pageSizeSel.value    = String(state.pageSize);
+    sortBy.value         = state.sort;
+  }
+
+  // ====== RENDU RESULTATS ======
+  function renderResults(){
+    const pageItems = PRODUCTS;
+
+    const text = TOTAL_PRODUCTS
+      ? `${TOTAL_PRODUCTS} result(s) total · showing ${pageItems.length} on this page`
+      : `${pageItems.length} result(s)`;
+    resultCount.textContent = text;
+
+    // Cart datalist
+    productList.innerHTML = PRODUCTS.map(p => {
+      const n = cartLabel(p);
+      return `<option value="${n}"></option>`;
+    }).join("");
+
+    // Cards
+    cardGrid.innerHTML = pageItems.map((p, idx) => {
+      const isSafe = !p.allergens || /^none$/i.test(p.allergens.trim());
+      const tag = isSafe ? "Safe" : `Contains: ${p.allergens}`;
+      const tagClass = isSafe ? "chip is-safe" : "chip is-danger";
+
+      return `<article class="card">
+        <header style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+          <div>
+            <strong>${p.product}</strong>
+            ${p.suffix ? `<div style="margin-top:4px"><span class="chip chip-suffix">${p.suffix}</span></div>` : ""}
+          </div>
+          <span class="${tagClass}">${tag}</span>
+        </header>
+        <p class="muted" style="margin:10px 0 6px">
+          ${p.supplier ? `Supplier: ${p.supplier} • ` : ""}
+          ${p.main || ""} • ${p.sweet || ""} • ${p.fat || ""} • ${p.season || ""}
+          ${p.suffix ? ` • Profile: ${p.suffix}` : ""}
+        </p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          ${[
+            p.supplier && `Supplier: ${p.supplier}`,
+            p.main,
+            p.sweet,
+            p.fat,
+            p.season,
+            p.suffix && `Profile: ${p.suffix}`
+          ].filter(Boolean).map(x=>`<span class="chip">${x}</span>`).join("")}
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="chip" onclick="openProductIndex(${idx})">View</button>
+          <button class="chip" onclick="addToCartIndex(${idx})">Add to cart</button>
+        </div>
+      </article>`;
+    }).join("");
+
+    // Table
+    tableBody.innerHTML = pageItems.map(p => `
+      <tr>
+        <td>${p.product}</td>
+        <td>${p.supplier || ""}</td>
+        <td>${p.main || ""}</td>
+        <td>${p.sweet || ""}</td>
+        <td>${p.fat || ""}</td>
+        <td>${p.season || ""}</td>
+        <td>${p.allergens || "—"}</td>
+      </tr>
+    `).join("");
+
+    // Pagination
+    const pages = Math.max(1, Math.ceil(TOTAL_PRODUCTS / state.pageSize));
+    pagination.innerHTML = "";
+    const mk = (label, page, disabled=false) =>
+      `<button class="chip" ${disabled ? "disabled" : ""} onclick="gotoPage(${page})">${label}</button>`;
+
+    pagination.innerHTML =
+      mk("⟨⟨", 1, state.page === 1) +
+      mk("⟨", Math.max(1, state.page - 1), state.page === 1) +
+      `<span class="muted" style="padding:0 6px">${state.page}/${pages}</span>` +
+      mk("⟩", Math.min(pages, state.page + 1), state.page === pages) +
+      mk("⟩⟩", pages, state.page === pages);
+  }
+
+  // Fonctions globales pour les onclick dans le HTML
+  window.gotoPage = function(p){
+    state.page = p;
+    fetchPageFromApi();
+  };
+
+  window.openProductIndex = function(idx){
+    const p = PRODUCTS[idx];
+    if (!p) return;
+    openProduct(p);
+  };
+
+  window.addToCartIndex = function(idx){
+    const p = PRODUCTS[idx];
+    if (!p) return;
+    if (!state.cart.some(x => x.id === p.id)){
+      state.cart.push(p);
+    }
+    renderCart();
+  };
+
+  // ====== MODAL PRODUIT ======
+  function openProduct(p){
+    const modal = document.getElementById("productModal");
+    const body  = document.getElementById("pmBody");
+    document.getElementById("pmTitle").textContent = p.product;
+
+    const isSafe = !p.allergens || /^none$/i.test(p.allergens.trim());
+    const tag = isSafe ? "Safe" : ("Contains: " + p.allergens);
+
+    body.innerHTML = `
+      <div class="grid">
+        <article class="card">
+          <h4 style="margin:0 0 6px">Details</h4>
+          <p class="muted">
+            ${p.supplier ? ("Supplier: " + p.supplier + " • ") : ""}
+            ${p.main || ""} • ${p.sweet || ""} • ${p.fat || ""} • ${p.season || ""}
+            ${p.suffix ? " • Profile: " + p.suffix : ""}
+          </p>
+          <span class="chip ${isSafe ? "is-safe" : "is-danger"}">${tag}</span>
+          <div style="margin-top:12px">
+            <strong>Allergens</strong>
+            <ul>${(p.allergens || "None").split(",").map(a => `<li>${(a || "None").trim()}</li>`).join("")}</ul>
+          </div>
+        </article>
+      </div>
+    `;
+    modal.style.display = "flex";
+    modal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeModal(){
+    const m = document.getElementById("productModal");
+    m.style.display = "none";
+    m.setAttribute("aria-hidden", "true");
+  }
+  window.closeModal = closeModal;
+
+  document.getElementById("productModal").addEventListener("click", e => {
+    if (e.target.id === "productModal") closeModal();
+  });
+
+  // ====== KPIs ======
+  function renderKPIs(){
+    if (!GLOBAL_INDEXES) return;
+
+    const total = GLOBAL_INDEXES.total || 0;
+    document.getElementById("kpiProducts").textContent = total.toLocaleString();
+
+    const nbAllergens = (GLOBAL_INDEXES.allergens || []).length;
+    document.getElementById("kpiAllergens").textContent = String(nbAllergens || "—");
+
+    const free = GLOBAL_INDEXES.freeFrom || [];
+    const noneEntry = free.find(x => x.label === "none");
+    const containsEntry = free.find(x => x.label === "contains");
+    const safeCount = noneEntry ? noneEntry.count : 0;
+    const containsCount = containsEntry ? containsEntry.count : 0;
+    const denom = safeCount + containsCount;
+    document.getElementById("kpiSafe").textContent =
+      denom ? Math.round(100 * safeCount / denom) + "%" : "—";
+
+    // Co-occur : le plus fréquent d'après analytics
+    let top = "—";
+    if (GLOBAL_ANALYTICS && GLOBAL_ANALYTICS.cooc && Array.isArray(GLOBAL_ANALYTICS.cooc.edges)){
+      const edges = GLOBAL_ANALYTICS.cooc.edges;
+      if (edges.length){
+        const best = edges[0];
+        top = best.source + " + " + best.target;
+      }
+    }
+    document.getElementById("kpiCoOccur").textContent = top;
+  }
+
+  // ====== INDEXES HUB ======
+  function renderIndexes(){
+    if (!GLOBAL_INDEXES) return;
+
+    const allergenIndex   = document.getElementById("allergenIndex");
+    const ingredientIndex = document.getElementById("ingredientIndex");
+    const sweetenerIndex  = document.getElementById("sweetenerIndex");
+    const fatIndex        = document.getElementById("fatIndex");
+    const seasonIndex     = document.getElementById("seasonIndex");
+    const freeFromIndex   = document.getElementById("freeFromIndex");
+
+    const { allergens, main, sweet, fat, season, freeFrom } = GLOBAL_INDEXES;
+
+    allergenIndex.innerHTML = allergens.map(({label, count}) => {
+      const safeLabel = (label || "—").replace(/'/g, "\\'");
+      return `<div class="index-item">
+        <header><strong>${safeLabel}</strong><span class="pill">${count}</span></header>
+        <button class="chip" onclick="setAvoidAllergen('${safeLabel}')">Filter</button>
+      </div>`;
+    }).join("");
+
+    const mkIndex = (data, container, onClickFn) => {
+      container.innerHTML = data.map(({label, count}) => {
+        const safeLabel = (label || "—").replace(/'/g, "\\'");
+        return `<div class="index-item">
+          <header><strong>${safeLabel}</strong><span class="pill">${count}</span></header>
+          <button class="chip" onclick="${onClickFn}('${safeLabel}')">View</button>
+        </div>`;
+      }).join("");
+    };
+
+    mkIndex(main,   ingredientIndex, "filterByMain");
+    mkIndex(sweet,  sweetenerIndex,  "filterBySweet");
+    mkIndex(fat,    fatIndex,        "filterByFat");
+    mkIndex(season, seasonIndex,     "filterBySeason");
+
+    freeFromIndex.innerHTML = freeFrom.map(({label, count}) => {
+      const text = label === "none" ? "Allergen-free products" : "Products containing allergens";
+      return `<div class="index-item">
+        <header><strong>${text}</strong><span class="pill">${count}</span></header>
+      </div>`;
+    }).join("");
+  }
+
+  window.setAvoidAllergen = function(a){
+    state.avoid = new Set([a]);
+    state.page = 1;
+    fetchPageFromApi();
+    renderFilters();
+  };
+
+  window.filterByMain = function(m){
+    state.main = m;
+    state.page = 1;
+    fetchPageFromApi();
+  };
+  window.filterBySweet = function(m){
+    state.sweet = m;
+    state.page = 1;
+    fetchPageFromApi();
+  };
+  window.filterByFat = function(m){
+    state.fat = m;
+    state.page = 1;
+    fetchPageFromApi();
+  };
+  window.filterBySeason = function(m){
+    state.season = m;
+    state.page = 1;
+    fetchPageFromApi();
+  };
+
+  // ====== CHARTS (via GLOBAL_ANALYTICS) ======
+  function renderCharts(){
+    if (!GLOBAL_ANALYTICS) return;
+
+    const a = GLOBAL_ANALYTICS;
+
+    // Top 10 allergens
+    const labelsTop = (a.topAllergens || []).map(x => x.label);
+    const dataTop   = (a.topAllergens || []).map(x => x.count);
+    if (chartTop) chartTop.destroy();
+    chartTop = new Chart(document.getElementById("topAllergensChart"), {
+      type: "bar",
+      data: { labels: labelsTop, datasets: [{ label: "Occurrences", data: dataTop }] },
+      options: { responsive: true, plugins: { legend: { display:false } } }
+    });
+
+    // Co-occurrence stacked (approx : on prend les 6 principaux)
+    const top6 = (a.topAllergens || []).slice(0,6).map(x => x.label);
+    const cooc = a.cooc || {edges:[]};
+    const matrix = top6.map(() => top6.map(() => 0));
+    (cooc.edges || []).forEach(e => {
+      const i = top6.indexOf(e.source);
+      const j = top6.indexOf(e.target);
+      if (i >= 0 && j >= 0){
+        matrix[i][j] += e.count;
+      }
+    });
+    if (chartCooc) chartCooc.destroy();
+    chartCooc = new Chart(document.getElementById("coocMatrix"), {
+      type: "bar",
+      data: {
+        labels: top6,
+        datasets: top6.map((name, i) => ({
+          label: name,
+          data: matrix[i],
+          stack: "x"
+        }))
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: {position:"bottom"} },
+        scales: { x:{stacked:true}, y:{stacked:true} }
+      }
+    });
+
+    // Distribution par main ingredient (byMain)
+    const byMain = a.byMain || {};
+    const mains  = Object.keys(byMain).sort();
+    if (mains.length){
+      if (!ingredientFamilySelect.value){
+        ingredientFamilySelect.innerHTML = mains.map(m => `<option>${m}</option>`).join("");
+        ingredientFamilySelect.value = mains[0];
+      }
+      const chosen = ingredientFamilySelect.value || mains[0];
+      const info = byMain[chosen] || { allergens: [] };
+      const labels2 = info.allergens.map(x => x.label || "None");
+      const data2   = info.allergens.map(x => x.count);
+      if (chartSplit) chartSplit.destroy();
+      chartSplit = new Chart(document.getElementById("ingredientSplit"), {
+        type: "bar",
+        data: { labels: labels2, datasets: [{ label:"Counts", data: data2 }]},
+        options: { responsive:true, plugins:{legend:{display:false}} }
+      });
+    }
+
+    // Safe vs contains (utilise GLOBAL_INDEXES.freeFrom)
+    let safeCount = 0;
+    let containsCount = 0;
+    if (GLOBAL_INDEXES && Array.isArray(GLOBAL_INDEXES.freeFrom)){
+      GLOBAL_INDEXES.freeFrom.forEach(f => {
+        if (f.label === "none") safeCount = f.count;
+        else if (f.label === "contains") containsCount = f.count;
+      });
+    }
+    if (chartDonut) chartDonut.destroy();
+    chartDonut = new Chart(document.getElementById("safeDonut"), {
+      type: "doughnut",
+      data: {
+        labels: ["Safe","Contains"],
+        datasets: [{ data: [safeCount, containsCount] }]
+      },
+      options: { responsive:true }
+    });
+
+    // Top main ingredients
+    const mLabels = (a.topMains || []).map(x => x.label);
+    const mData   = (a.topMains || []).map(x => x.count);
+    if (chartMains) chartMains.destroy();
+    chartMains = new Chart(document.getElementById("topMains"), {
+      type: "bar",
+      data: { labels: mLabels, datasets:[{ data:mData }]},
+      options:{ plugins:{legend:{display:false}} }
+    });
+
+    // Top sweeteners & oils
+    const sList = a.sweetCounts || [];
+    const fList = a.fatCounts   || [];
+    const allLabels = Array.from(new Set([
+      ...sList.map(x=>x.label),
+      ...fList.map(x=>x.label)
+    ]));
+    const dsSweet = allLabels.map(l => {
+      const item = sList.find(x=>x.label===l);
+      return item ? item.count : 0;
+    });
+    const dsFat = allLabels.map(l => {
+      const item = fList.find(x=>x.label===l);
+      return item ? item.count : 0;
+    });
+    if (chartSweetOil) chartSweetOil.destroy();
+    chartSweetOil = new Chart(document.getElementById("topSweetOil"), {
+      type: "bar",
+      data: {
+        labels: allLabels,
+        datasets: [
+          { label:"Sweeteners", data: dsSweet, stack:"a" },
+          { label:"Fats/Oils",  data: dsFat,   stack:"a" }
+        ]
+      },
+      options: { responsive:true, scales:{x:{stacked:true}, y:{stacked:true}} }
+    });
+  }
+
+  // ====== CO-OC NETWORK (D3, à partir de GLOBAL_ANALYTICS) ======
+function buildCoocNetwork(){
+  if (!GLOBAL_ANALYTICS || !GLOBAL_ANALYTICS.cooc) return;
+
+  const nodes = (GLOBAL_ANALYTICS.cooc.nodes || []).map(d => ({ ...d }));
+  const edges = GLOBAL_ANALYTICS.cooc.edges || [];
+
+  const svg = d3.select("#coocSvg");
+  svg.selectAll("*").remove();
+  const width = 800, height = 420;
+
+  const g = svg.append("g");
+  const zoom = d3.zoom().on("zoom", (event)=> g.attr("transform", event.transform));
+  svg.call(zoom);
+
+  const linkScale = d3.scaleLinear()
+    .domain(d3.extent(edges, d=>d.count) || [0,1])
+    .range([1,6]);
+  const nodeScale = d3.scaleSqrt()
+    .domain(d3.extent(nodes, d=>d.count) || [1,1])
+    .range([6,22]);
+
+  // Construire des liens qui référencent les objets nœuds
+  const nodeById = new Map(nodes.map(d => [d.id, d]));
+  const links = edges.map(e => ({
+    source: nodeById.get(e.source),
+    target: nodeById.get(e.target),
+    count : e.count,
+  }));
+
+  const link = g.append("g")
+    .attr("stroke","#94A3B8").attr("stroke-opacity",0.6)
+    .selectAll("line").data(links).enter()
+    .append("line").attr("stroke-width", d => linkScale(d.count));
+
+  const node = g.append("g").selectAll("g")
+    .data(nodes).enter().append("g").attr("cursor","pointer");
+
+  node.append("circle")
+    .attr("r", d=>nodeScale(d.count))
+    .attr("fill","#C7E0F9")
+    .attr("stroke","#0B7BAA");
+
+  node.append("text")
+    .text(d=>d.id)
+    .attr("font-size","10px")
+    .attr("dy",4)
+    .attr("x", d=>nodeScale(d.count)+4)
+    .attr("fill","#0F172A");
+
+  const tooltip = d3.select("#coocNetwork").append("div")
+    .style("position","absolute")
+    .style("pointer-events","none")
+    .style("background","#111827")
+    .style("color","#fff")
+    .style("padding","6px 8px")
+    .style("border-radius","8px")
+    .style("font-size","12px")
+    .style("display","none");
+
+  function showListFor(id){
+    const listDiv = document.getElementById("coocList");
+    const relevant = edges
+      .filter(e => e.source === id || e.target === id)
+      .sort((a,b)=> b.count - a.count)
+      .slice(0,12);
+    listDiv.innerHTML = relevant.map(e => {
+      const other = e.source === id ? e.target : e.source;
+      return `<span class="chip">${id} ↔ ${other}: ${e.count}</span>`;
+    }).join("");
+  }
+
+  // Simulation force
+  const simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id).distance(120).strength(0.5))
+    .force("charge", d3.forceManyBody().strength(-300))
+    .force("center", d3.forceCenter(width / 2, height / 2));
+
+  simulation.on("tick", () => {
+    link
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+
+    node.attr("transform", d => `translate(${d.x},${d.y})`);
+  });
+
+  node.on("click", (event,d) => {
+    node.selectAll("circle").attr("fill","#C7E0F9").attr("opacity",.6);
+    d3.select(event.currentTarget).select("circle").attr("fill","#FFEDD5").attr("opacity",1);
+    link.attr("stroke","#CBD5E1").attr("stroke-opacity",.3);
+    link.filter(l => l.source.id === d.id || l.target.id === d.id)
+      .attr("stroke","#F59E0B").attr("stroke-opacity",.9);
+    showListFor(d.id);
+  });
+
+  node.on("mousemove", (event,d) => {
+    const [x,y] = d3.pointer(event);
+    tooltip.style("left", (x+20)+"px")
+      .style("top", (y+20)+"px")
+      .style("display","block")
+      .text(`${d.id}: ${d.count}`);
+  }).on("mouseleave", ()=> tooltip.style("display","none"));
+} 
+
+
+  // ====== CART ======
+  function renderCart(){
+    // Chips d’allergènes (global) pour le profil d’evitement
+    cartAvoid.innerHTML = "";
+    globalAllergenLabels().forEach(a => {
+      const b = document.createElement("button");
+      b.className = "chip";
+      b.textContent = a;
+      if (state.avoid.has(a)) b.classList.add("is-danger");
+
+      b.onclick = () => {
+        if (state.avoid.has(a)) state.avoid.delete(a);
+        else state.avoid.add(a);
+        renderCart();
+        fetchPageFromApi();
+      };
+      cartAvoid.appendChild(b);
+    });
+
+    // Lignes panier
+    cartBody.innerHTML = state.cart.map(p => {
+      const allergens = (p.allergens || "")
+        .split(",").map(s=>s.trim()).filter(Boolean);
+      const bad = allergens.filter(a => state.avoid.has(a));
+      const verdict = bad.length ? "Avoid" : "OK";
+      const cls = bad.length ? "chip is-danger" : "chip is-safe";
+
+      const allergenChips = allergens.length
+        ? allergens.map(a => {
+            const danger = state.avoid.has(a);
+            const label = danger ? `⚠ Contains ${a}` : a;
+            return `<span class="chip ${danger ? "is-warn" : ""}">${label}</span>`;
+          }).join(" ")
+        : "—";
+
+      return `<tr>
+        <td>${cartLabel(p)}</td>
+        <td>${allergenChips}</td>
+        <td><span class="${cls}">${verdict}</span></td>
+        <td><button class="chip" onclick='removeFromCart("${p.id}")'>✕</button></td>
+      </tr>`;
+    }).join("");
+
+    // Agrégation globale des allergènes dans le panier
+    const agg = {};
+    state.cart.forEach(p => {
+      (p.allergens || "")
+        .split(",").map(s=>s.trim()).filter(Boolean)
+        .forEach(a => { agg[a] = (agg[a] || 0) + 1; });
+    });
+    cartAgg.innerHTML = Object.entries(agg)
+      .sort((a,b)=> b[1]-a[1])
+      .map(([a,c]) =>
+        `<span class="chip ${state.avoid.has(a) ? "is-danger" : ""}">${a}: ${c}</span>`
+      ).join("");
+  }
+
+  window.removeFromCart = function(id){
+    state.cart = state.cart.filter(p => p.id !== id);
+    renderCart();
+  };
+
+  document.getElementById("btnAddToCart").addEventListener("click", () => {
+    const val = cartSearch.value.trim();
+    if (!val) return;
+    // On cherche dans la page courante le produit dont le label complet matche
+    const p = PRODUCTS.find(p => cartLabel(p) === val) ||
+              PRODUCTS.find(p => p.product === val);
+    if (!p) return;
+    if (!state.cart.some(x => x.id === p.id)){
+      state.cart.push(p);
+    }
+    renderCart();
+  });
+
+  document.getElementById("btnClearCart").addEventListener("click", () => {
+    state.cart = [];
+    renderCart();
+  });
+
+  // ====== APPELS API ======
+  async function fetchPageFromApi(){
+    try{
+      const params = new URLSearchParams();
+      params.set("page", state.page);
+      params.set("size", state.pageSize);
+      params.set("sort", state.sort);
+      if (state.search)   params.set("search", state.search);
+      if (state.supplier) params.set("supplier", state.supplier);
+      if (state.suffix)   params.set("suffix", state.suffix);
+      if (state.main)     params.set("main", state.main);
+      if (state.sweet)    params.set("sweet", state.sweet);
+      if (state.fat)      params.set("fat", state.fat);
+      if (state.season)   params.set("season", state.season);
+      if (state.avoid.size){
+        params.set("avoid", Array.from(state.avoid).join(","));
+      }
+      if (state.include.size){
+        params.set("include", Array.from(state.include).join(","));
+      }
+
+      const url = `${API_BASE}/api/products?${params.toString()}`;
+      console.log("[FRONT] fetchPageFromApi:", url);
+
+      const res = await fetch(url);
+      if (!res.ok){
+        throw new Error("HTTP " + res.status + " " + res.statusText);
+      }
+      const payload = await res.json();
+      TOTAL_PRODUCTS = payload.total || 0;
+      PRODUCTS = (payload.items || []).map(normalizeRow);
+
+      renderResults();
+      renderCart();
+    } catch (err){
+      console.error("Erreur /api/products:", err);
+      if (resultCount){
+        resultCount.textContent = "ERREUR /api/products : " + err.message;
+      }
+    }
+  }
+
+  async function fetchGlobalIndexes(){
+    try{
+      const url = `${API_BASE}/api/stats/indexes`;
+      console.log("[FRONT] fetchGlobalIndexes:", url);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("HTTP " + res.status + " " + res.statusText);
+      GLOBAL_INDEXES = await res.json();
+      console.log("[FRONT] /api/stats/indexes payload:", GLOBAL_INDEXES);
+      renderIndexes();
+      renderFilters();
+      renderKPIs();
+    } catch(e){
+      console.error("Erreur /api/stats/indexes:", e);
+    }
+  }
+
+  async function fetchAnalytics(){
+    try{
+      const url = `${API_BASE}/api/stats/analytics`;
+      console.log("[FRONT] fetchAnalytics:", url);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("HTTP " + res.status + " " + res.statusText);
+      GLOBAL_ANALYTICS = await res.json();
+      console.log("[FRONT] /api/stats/analytics payload:", GLOBAL_ANALYTICS);
+      renderCharts();
+      buildCoocNetwork();
+      renderKPIs();
+    } catch(e){
+      console.error("Erreur /api/stats/analytics:", e);
+    }
+  }
+
+  // ====== Wiring UI ======
+  // Recherche locale (sidebar)
+  const searchInput = document.getElementById("search");
+  searchInput.addEventListener("input", e => {
+    state.search = e.target.value;
+    state.page = 1;
+    fetchPageFromApi();
+  });
+
+  // Bouton Apply
+  document.getElementById("applyFilters").addEventListener("click", () => {
+    state.supplier = supplierSelect.value;
+    state.suffix   = suffixSelect.value;
+    state.main     = mainSelect.value;
+    state.sweet    = sweetSelect.value;
+    state.fat      = fatSelect.value;
+    state.season   = seasonSelect.value;
+    state.pageSize = parseInt(pageSizeSel.value, 10) || 12;
+    state.sort     = sortBy.value;
+    state.page     = 1;
+    fetchPageFromApi();
+  });
+
+  // Reset filtres
+  document.getElementById("clearFilters").addEventListener("click", () => {
+    state.search = "";
+    searchInput.value = "";
+
+    state.avoid.clear();
+    state.include.clear();
+    state.supplier = "";
+    state.suffix   = "";
+    state.main     = "";
+    state.sweet    = "";
+    state.fat      = "";
+    state.season   = "";
+    state.page     = 1;
+
+    fetchPageFromApi();
+    renderFilters();
+  });
+
+  // Global search (Ctrl/⌘+K)
+  const gs = document.getElementById("globalSearch");
+  window.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k"){
+      e.preventDefault();
+      gs.focus();
+    }
+  });
+  gs.addEventListener("input", e => {
+    state.search = e.target.value;
+    state.page = 1;
+    fetchPageFromApi();
+  });
+
+  // Selector pour chart "Distribution by main ingredient"
+  ingredientFamilySelect.addEventListener("change", () => {
+    renderCharts();
+  });
+
+  // Nav active
+  function setActive(id){
+    document.querySelectorAll(".nav-links a").forEach(a => a.classList.remove("active"));
+    const el = document.querySelector(`.nav-links a[data-link="${id}"]`);
+    if (el) el.classList.add("active");
+  }
+  document.querySelectorAll(".nav-links a").forEach(a => {
+    a.addEventListener("click", () => setActive(a.getAttribute("data-link")));
+  });
+
+  // ====== BOOT ======
+  (function init(){
+    state.page = 1;
+    fetchGlobalIndexes();  // stats globales (indexes + KPIs)
+    fetchAnalytics();      // analytics (charts + co-occur)
+    fetchPageFromApi();    // page 1 de catalogue
+  })();
+</script>
+</body>
+</html>
+
