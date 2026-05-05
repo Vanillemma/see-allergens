@@ -1,4 +1,4 @@
-#  FullStack projet - See Allergy — Food Allergen Explorer
+#  FullStack projet — See Allergy — Food Allergen Explorer
  
 > A Big Data web application for browsing, filtering, and analyzing food product catalogs with allergen detection and personalized allergy profiling.
  
